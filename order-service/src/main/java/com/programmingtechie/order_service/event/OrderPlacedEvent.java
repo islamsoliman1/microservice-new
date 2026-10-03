@@ -2,17 +2,16 @@ package com.programmingtechie.order_service.event;
 
 
 import jdk.jfr.DataAmount;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
 @Data
 @AllArgsConstructor
-@NoArgsCondtractor
+@NoArgsConstructor
 public class OrderPlacedEvent {
 
 private String orderNumber;
-
-
-
-
 
 
 }
