@@ -109,7 +109,7 @@ class ProductServicesApplicationTests {
 		when(productRepository.findAll())
 				.thenReturn(List.of(product));
 
-		List<ProductResponse> result = productService.getAllproduct();
+		List<ProductResponse> result = productService.getAllProducts();
 
 		assertThat(result).hasSize(1);
 		assertThat(result.get(0).getId()).isEqualTo("123");
@@ -130,7 +130,7 @@ class ProductServicesApplicationTests {
 				.thenReturn(List.of());
 
 		List<ProductResponse> result =
-				productService.getAllproduct();
+				productService.getAllProducts();
 
 		assertThat(result).isEmpty();
 

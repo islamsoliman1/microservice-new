@@ -10,14 +10,14 @@ import org.springframework.kafka.annotation.KafkaListener;
 @SpringBootApplication
 @Slf4j
 public class NotificationServiceApplication {
-    static void main(String[] args) {
+    public static void main(String[] args) {
         SpringApplication.run(NotificationServiceApplication.class, args);
 
     }
 @KafkaListener(topics="notificationTopic")
     public void handleNotification(OrderPlacedEvent orderPlacedEvent){
-  //send out on Email Notification
-     log.info("Receved Notification For Order -{}" ,orderPlacedEvent.getOrderNumber());
+  // send out an email notification
+     log.info("Received notification for order - {}" ,orderPlacedEvent.getOrderNumber());
 
 
 }

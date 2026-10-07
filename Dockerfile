@@ -11,3 +11,4 @@ FROM eclipse-temurin:26-jre
 WORKDIR /app
 COPY --from=build /app/app.jar app.jar
 ENTRYPOINT ["java", "-jar", "app.jar"]
+

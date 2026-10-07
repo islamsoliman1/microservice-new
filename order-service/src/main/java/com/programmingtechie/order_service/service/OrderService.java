@@ -10,6 +10,8 @@ import com.programmingtechie.order_service.model.OrderLineItems;
 import com.programmingtechie.order_service.repository.OrderRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.ObjectProvider;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.reactive.function.client.WebClient;
@@ -31,8 +33,11 @@ public class OrderService {
 
    private final OrderRepository orderRepository;
    private final WebClient.Builder webClientBuilder;
-private final Tracer tracer;
-private final KafkaTemplate<String, OrderPlacedEvent> kafkaTemplate;
+   private final ObjectProvider<Tracer> tracerProvider;
+   private final KafkaTemplate<String, OrderPlacedEvent> kafkaTemplate;
+
+   @Value("${inventory.service.url:http://inventory-service}")
+   private String inventoryServiceUrl;
 
 
     public void placeOrder(OrderRequest orderRequest) {
@@ -51,38 +56,46 @@ private final KafkaTemplate<String, OrderPlacedEvent> kafkaTemplate;
                 .toList();
 
         log.info("Calling inventory Service");
+        Tracer tracer = tracerProvider.getIfAvailable();
+        if (tracer == null) {
+            checkInventoryAndSaveOrder(order, skuCodes);
+            return;
+        }
+
         Span inventoryServiceLookup = tracer.nextSpan().name("InventoryServiceLookup");
-
         try (Tracer.SpanInScope ws = tracer.withSpan(inventoryServiceLookup.start())) {
-
-            InventoryResponse[] inventoryResponseArray = webClientBuilder.build()
-                    .get()
-                    .uri(uriBuilder -> uriBuilder
-                            .scheme("http")
-                            .host("localhost")
-                            .port(8082)
-                            .path("/api/inventory")
-                            .queryParam("skuCode", skuCodes)
-                            .build())
-                    .retrieve()
-                    .bodyToMono(InventoryResponse[].class)
-                    .block();
-
-            if (inventoryResponseArray == null) {
-                throw new IllegalStateException("Inventory service returned no response");
-            }
-
-            boolean allProductInStock = Arrays.stream(inventoryResponseArray)
-                    .allMatch(InventoryResponse::isInStock);
-
-            if (allProductInStock) {
-                orderRepository.save(order);
-                kafkaTemplate.send("NotificationTopic", new OrderPlacedEvent(order.getOrderNumber()));
-            } else {
-                throw new IllegalArgumentException("Product is not in stock");
-            }
+            checkInventoryAndSaveOrder(order, skuCodes);
         } finally {
             inventoryServiceLookup.end();
+        }
+    }
+
+    private void checkInventoryAndSaveOrder(Order order, List<String> skuCodes) {
+        InventoryResponse[] inventoryResponseArray = webClientBuilder
+                .clone()
+                .baseUrl(inventoryServiceUrl)
+                .build()
+                .get()
+                .uri(uriBuilder -> uriBuilder
+                        .path("/api/inventory")
+                        .queryParam("skuCode", skuCodes)
+                        .build())
+                .retrieve()
+                .bodyToMono(InventoryResponse[].class)
+                .block();
+
+        if (inventoryResponseArray == null) {
+            throw new IllegalStateException("Inventory service returned no response");
+        }
+
+        boolean allProductInStock = Arrays.stream(inventoryResponseArray)
+                .allMatch(InventoryResponse::isInStock);
+
+        if (allProductInStock) {
+            orderRepository.save(order);
+            kafkaTemplate.send("notificationTopic", new OrderPlacedEvent(order.getOrderNumber()));
+        } else {
+            throw new IllegalArgumentException("Product is not in stock");
         }
     }
 

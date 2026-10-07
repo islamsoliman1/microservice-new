@@ -71,7 +71,7 @@ public class ProductControllerTest {
                 .price(BigDecimal.valueOf(50000))
                 .build();
 
-        when(productService.getAllproduct())
+        when(productService.getAllProducts())
                 .thenReturn(List.of(product));
 
         mockMvc.perform(get("/api/product"))
@@ -81,7 +81,7 @@ public class ProductControllerTest {
                 .andExpect(jsonPath("$[0].description").value("Gaming Laptop"))
                 .andExpect(jsonPath("$[0].price").value(50000));
 
-        verify(productService).getAllproduct();
+        verify(productService).getAllProducts();
     }
 
 
