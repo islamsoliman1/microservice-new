@@ -22,6 +22,15 @@ public class SecurityConfig {
         return http
                 .csrf(ServerHttpSecurity.CsrfSpec::disable)
                 .authorizeExchange(exchange -> exchange
+                        // Public documentation; API authorization rules below still apply.
+                        .pathMatchers(HttpMethod.GET, "/docs", "/swagger-ui.html",
+                                "/swagger-ui/**", "/webjars/swagger-ui/**",
+                                "/documentation/index.html", "/documentation/swagger.js",
+                                "/v3/api-docs/swagger-config", "/openapi/all",
+                                "/openapi/products", "/openapi/orders").permitAll()
+
+                        .pathMatchers("/api/inventory", "/api/inventory/**").denyAll()
+
                         // Eureka UI
                         .pathMatchers("/eureka/**").permitAll()
 
