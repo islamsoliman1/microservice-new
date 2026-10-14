@@ -6,6 +6,8 @@ import com.programmingtechie.Product_services.dto.ProductRequest;
 import com.programmingtechie.Product_services.dto.ProductResponse;
 import com.programmingtechie.Product_services.service.ProductService;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -29,13 +31,17 @@ public class ProductController {
 
 
     @Operation(
+            operationId = "createProduct",
             summary = "Create a product",
-            description = "Creates a new product in the product catalog"
+            description = "Creates a product. Requires an ADMIN access token at the gateway.",
+            security = @SecurityRequirement(name = "bearerAuth")
     )
-    @ApiResponse(
-            responseCode = "201",
-            description = "Product created successfully"
-    )
+    @ApiResponses({
+            @ApiResponse(responseCode = "201", description = "Product created; empty response body", content = @Content),
+            @ApiResponse(responseCode = "400", description = "Invalid product fields", content = @Content),
+            @ApiResponse(responseCode = "401", description = "Missing or invalid access token at the gateway", content = @Content),
+            @ApiResponse(responseCode = "403", description = "Token does not have ADMIN role", content = @Content)
+    })
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     public void createProduct(
@@ -46,6 +52,7 @@ public class ProductController {
 
 
     @Operation(
+            operationId = "listProducts",
             summary = "Get all products",
             description = "Returns all products from the product catalog"
     )
@@ -62,6 +69,7 @@ public class ProductController {
 
 
     @Operation(
+            operationId = "getProduct",
             summary = "Get product by ID",
             description = "Returns a product using its unique ID"
     )
@@ -72,7 +80,8 @@ public class ProductController {
             ),
             @ApiResponse(
                     responseCode = "404",
-                    description = "Product not found"
+                    description = "Product not found",
+                    content = @Content
             )
     })
     @GetMapping("/{id}")

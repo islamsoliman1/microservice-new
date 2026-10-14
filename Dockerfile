@@ -5,7 +5,7 @@ WORKDIR /app
 COPY . .
 RUN --mount=type=cache,target=/root/.m2 \
     mvn -q -pl ${MODULE} -am clean package -DskipTests \
-    && cp ${MODULE}/target/*.jar /app/app.jar
+    && cp ${MODULE}/target/*-exec.jar /app/app.jar
 
 FROM eclipse-temurin:26-jre
 WORKDIR /app

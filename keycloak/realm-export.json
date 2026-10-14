@@ -1,0 +1,50 @@
+{
+  "realm": "spring-boot-microservice-realm",
+  "enabled": true,
+  "sslRequired": "none",
+  "registrationAllowed": false,
+  "roles": {
+    "realm": [
+      { "name": "USER", "description": "Place orders" },
+      { "name": "ADMIN", "description": "Manage the product catalog" }
+    ]
+  },
+  "clients": [
+    {
+      "clientId": "spring-boot-microservice-client",
+      "name": "Local microservices demo",
+      "enabled": true,
+      "protocol": "openid-connect",
+      "publicClient": true,
+      "standardFlowEnabled": false,
+      "directAccessGrantsEnabled": true,
+      "serviceAccountsEnabled": false,
+      "fullScopeAllowed": true,
+      "defaultClientScopes": ["profile", "email", "roles"]
+    }
+  ],
+  "users": [
+    {
+      "username": "user",
+      "enabled": true,
+      "firstName": "Demo",
+      "lastName": "User",
+      "email": "user@example.test",
+      "emailVerified": true,
+      "requiredActions": [],
+      "credentials": [{ "type": "password", "value": "password", "temporary": false }],
+      "realmRoles": ["USER"]
+    },
+    {
+      "username": "admin",
+      "enabled": true,
+      "firstName": "Demo",
+      "lastName": "Admin",
+      "email": "admin@example.test",
+      "emailVerified": true,
+      "requiredActions": [],
+      "credentials": [{ "type": "password", "value": "password", "temporary": false }],
+      "realmRoles": ["USER", "ADMIN"]
+    }
+  ]
+}

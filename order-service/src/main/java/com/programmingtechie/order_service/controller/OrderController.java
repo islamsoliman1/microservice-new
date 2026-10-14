@@ -7,6 +7,10 @@ import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
 import io.github.resilience4j.retry.annotation.Retry;
 import io.github.resilience4j.timelimiter.annotation.TimeLimiter;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.ExampleObject;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -21,29 +25,45 @@ import java.util.concurrent.CompletableFuture;
 @RequestMapping("/api/order")
 @RequiredArgsConstructor
 @Tag(
-        name = "Order Controller",
-        description = "APIs for managing orders"
+        name = "Orders",
+        description = "Order placement"
 )
 public class OrderController {
 
     private final OrderService orderService;
 
     @Operation(
+            operationId = "placeOrder",
             summary = "Place a new order",
-            description = "Creates a new order after checking inventory availability"
+            description = "Requires USER or ADMIN at the gateway. Use an existing inventory SKU. "
+                    + "The current demo does not reserve stock or verify catalog prices. "
+                    + "The fallback also returns 201: inspect the response body, not just the status.",
+            security = @SecurityRequirement(name = "bearerAuth")
     )
     @ApiResponses({
             @ApiResponse(
                     responseCode = "201",
-                    description = "Order placed successfully"
+                    description = "Success message, or a failure message from the current fallback",
+                    content = @Content(mediaType = "text/plain", schema = @Schema(type = "string"),
+                            examples = {
+                                    @ExampleObject(name = "Success", value = "Order Placed Success"),
+                                    @ExampleObject(name = "Fallback", value = "Oops something went wrong. Try again later")
+                            })
             ),
             @ApiResponse(
                     responseCode = "400",
-                    description = "Invalid order request"
+                    description = "Invalid order request",
+                    content = @Content
             ),
             @ApiResponse(
-                    responseCode = "503",
-                    description = "Inventory service unavailable"
+                    responseCode = "401",
+                    description = "Missing or invalid access token at the gateway",
+                    content = @Content
+            ),
+            @ApiResponse(
+                    responseCode = "403",
+                    description = "Token does not have USER or ADMIN role",
+                    content = @Content
             )
     })
     @PostMapping

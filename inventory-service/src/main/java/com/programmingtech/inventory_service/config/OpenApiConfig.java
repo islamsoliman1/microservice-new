@@ -3,7 +3,6 @@ package com.programmingtech.inventory_service.config;
 import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.info.Contact;
 import io.swagger.v3.oas.models.info.Info;
-import io.swagger.v3.oas.models.info.License;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -15,9 +14,9 @@ public class OpenApiConfig {
         return new OpenAPI()
                 .info(new Info()
                         .title("Inventory Service API")
-                        .description("Check product stock levels by SKU code")
+                        .description("Internal SKU stock lookup backed by SQL Server. Reference only in the "
+                                + "combined gateway documentation; no gateway business route is exposed.")
                         .version("1.0.0")
-                        .contact(new Contact().name("Islam").url("https://github.com/islamsoliman1"))
-                        .license(new License().name("MIT")));
+                        .contact(new Contact().name("Islam").url("https://github.com/islamsoliman1")));
     }
 }
