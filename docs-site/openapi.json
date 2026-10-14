@@ -1,0 +1,351 @@
+{
+    "openapi":  "3.1.0",
+    "info":  {
+                 "title":  "Microservices E-Commerce API Reference",
+                 "version":  "1.0.0",
+                 "description":  "Static API reference for a Java microservices portfolio project. Backend execution\nis disabled on this hosted page. Request schemas and response examples describe\nthe API implemented in the source repository.\n\n### Architecture\n\n| Service | Responsibility |\n| --- | --- |\n| API Gateway | Routes requests and validates Keycloak JWTs and roles |\n| Product | MongoDB product catalog |\n| Order | SQL Server order persistence, inventory lookup, Kafka publication |\n| Inventory | Internal SQL Server SKU stock checks |\n| Notification | Kafka listener that logs notifications |\n| Eureka | Service registration and discovery |\n| Keycloak | Identity and access tokens |\n\nRequest flow: Client -\u003e Gateway -\u003e Product -\u003e MongoDB.\nOrder flow: Client -\u003e Gateway -\u003e Order -\u003e Inventory -\u003e stock lookup.\nEvent flow: Order -\u003e Kafka notificationTopic -\u003e Notification.\n\nProduct reads are public through the gateway. Product creation requires ADMIN;\norder placement requires USER or ADMIN. Inventory is internal.\n\n### Current behavior\n\nOrders use client-supplied prices and do not reserve stock. The fallback can\nreturn HTTP 201 with a failure message. Database writes and Kafka publication\nare not atomic. See the repository README for setup and known limitations."
+             },
+    "servers":  [
+                    {
+                        "url":  "https://backend.example.invalid",
+                        "description":  "Reference only; no public backend is deployed"
+                    }
+                ],
+    "paths":  {
+                  "/api/product":  {
+                                       "get":  {
+                                                   "tags":  [
+                                                                "Products"
+                                                            ],
+                                                   "summary":  "Get all products",
+                                                   "description":  "Returns all products from the product catalog",
+                                                   "operationId":  "product_listProducts",
+                                                   "responses":  {
+                                                                     "404":  {
+                                                                                 "description":  "Not Found"
+                                                                             },
+                                                                     "200":  {
+                                                                                 "description":  "Products retrieved successfully",
+                                                                                 "content":  {
+                                                                                                 "*/*":  {
+                                                                                                             "schema":  {
+                                                                                                                            "type":  "array",
+                                                                                                                            "items":  {
+                                                                                                                                          "$ref":  "#/components/schemas/product_ProductResponse"
+                                                                                                                                      }
+                                                                                                                        }
+                                                                                                         }
+                                                                                             }
+                                                                             }
+                                                                 }
+                                               },
+                                       "post":  {
+                                                    "tags":  [
+                                                                 "Products"
+                                                             ],
+                                                    "summary":  "Create a product",
+                                                    "description":  "Creates a product. Requires an ADMIN access token at the gateway.",
+                                                    "operationId":  "product_createProduct",
+                                                    "requestBody":  {
+                                                                        "content":  {
+                                                                                        "application/json":  {
+                                                                                                                 "schema":  {
+                                                                                                                                "$ref":  "#/components/schemas/product_ProductRequest"
+                                                                                                                            }
+                                                                                                             }
+                                                                                    },
+                                                                        "required":  true
+                                                                    },
+                                                    "responses":  {
+                                                                      "404":  {
+                                                                                  "description":  "Not Found"
+                                                                              },
+                                                                      "201":  {
+                                                                                  "description":  "Product created; empty response body"
+                                                                              },
+                                                                      "400":  {
+                                                                                  "description":  "Invalid product fields"
+                                                                              },
+                                                                      "401":  {
+                                                                                  "description":  "Missing or invalid access token at the gateway"
+                                                                              },
+                                                                      "403":  {
+                                                                                  "description":  "Token does not have ADMIN role"
+                                                                              }
+                                                                  },
+                                                    "security":  [
+                                                                     {
+                                                                         "bearerAuth":  [
+
+                                                                                        ]
+                                                                     }
+                                                                 ]
+                                                }
+                                   },
+                  "/api/product/{id}":  {
+                                            "get":  {
+                                                        "tags":  [
+                                                                     "Products"
+                                                                 ],
+                                                        "summary":  "Get product by ID",
+                                                        "description":  "Returns a product using its unique ID",
+                                                        "operationId":  "product_getProduct",
+                                                        "parameters":  [
+                                                                           {
+                                                                               "name":  "id",
+                                                                               "in":  "path",
+                                                                               "required":  true,
+                                                                               "schema":  {
+                                                                                              "type":  "string"
+                                                                                          }
+                                                                           }
+                                                                       ],
+                                                        "responses":  {
+                                                                          "404":  {
+                                                                                      "description":  "Product not found",
+                                                                                      "content":  {
+
+                                                                                                  }
+                                                                                  },
+                                                                          "200":  {
+                                                                                      "description":  "Product found",
+                                                                                      "content":  {
+                                                                                                      "*/*":  {
+                                                                                                                  "schema":  {
+                                                                                                                                 "$ref":  "#/components/schemas/product_ProductResponse"
+                                                                                                                             }
+                                                                                                              }
+                                                                                                  }
+                                                                                  }
+                                                                      }
+                                                    }
+                                        },
+                  "/api/order":  {
+                                     "post":  {
+                                                  "tags":  [
+                                                               "Orders"
+                                                           ],
+                                                  "summary":  "Place a new order",
+                                                  "description":  "Requires USER or ADMIN at the gateway. Use an existing inventory SKU. The current demo does not reserve stock or verify catalog prices. The fallback also returns 201: inspect the response body, not just the status.",
+                                                  "operationId":  "order_placeOrder",
+                                                  "requestBody":  {
+                                                                      "content":  {
+                                                                                      "application/json":  {
+                                                                                                               "schema":  {
+                                                                                                                              "$ref":  "#/components/schemas/order_OrderRequest"
+                                                                                                                          }
+                                                                                                           }
+                                                                                  },
+                                                                      "required":  true
+                                                                  },
+                                                  "responses":  {
+                                                                    "201":  {
+                                                                                "description":  "Success message, or a failure message from the current fallback",
+                                                                                "content":  {
+                                                                                                "text/plain":  {
+                                                                                                                   "schema":  {
+                                                                                                                                  "type":  "string"
+                                                                                                                              },
+                                                                                                                   "examples":  {
+                                                                                                                                    "Success":  {
+                                                                                                                                                    "description":  "Success",
+                                                                                                                                                    "value":  "Order Placed Success"
+                                                                                                                                                },
+                                                                                                                                    "Fallback":  {
+                                                                                                                                                     "description":  "Fallback",
+                                                                                                                                                     "value":  "Oops something went wrong. Try again later"
+                                                                                                                                                 }
+                                                                                                                                }
+                                                                                                               }
+                                                                                            }
+                                                                            },
+                                                                    "400":  {
+                                                                                "description":  "Invalid order request"
+                                                                            },
+                                                                    "401":  {
+                                                                                "description":  "Missing or invalid access token at the gateway"
+                                                                            },
+                                                                    "403":  {
+                                                                                "description":  "Token does not have USER or ADMIN role"
+                                                                            }
+                                                                },
+                                                  "security":  [
+                                                                   {
+                                                                       "bearerAuth":  [
+
+                                                                                      ]
+                                                                   }
+                                                               ]
+                                              }
+                                 },
+                  "/api/inventory":  {
+                                         "get":  {
+                                                     "tags":  [
+                                                                  "Inventory (Internal)"
+                                                              ],
+                                                     "summary":  "Check stock by SKU",
+                                                     "description":  "Internal service reference. This endpoint is not routed by the gateway; interactive execution is disabled here.\n\nInternal lookup used by Order Service. Returns existing SKUs with quantity greater than zero as in stock; unknown SKUs are omitted. Includes a deliberate delay.",
+                                                     "operationId":  "inventory_checkStock",
+                                                     "parameters":  [
+                                                                        {
+                                                                            "name":  "skuCode",
+                                                                            "in":  "query",
+                                                                            "description":  "One or more existing inventory SKUs",
+                                                                            "required":  true,
+                                                                            "schema":  {
+                                                                                           "type":  "array",
+                                                                                           "items":  {
+                                                                                                         "type":  "string",
+                                                                                                         "example":  "iphone_15"
+                                                                                                     }
+                                                                                       }
+                                                                        }
+                                                                    ],
+                                                     "responses":  {
+                                                                       "200":  {
+                                                                                   "description":  "OK",
+                                                                                   "content":  {
+                                                                                                   "*/*":  {
+                                                                                                               "schema":  {
+                                                                                                                              "type":  "array",
+                                                                                                                              "items":  {
+                                                                                                                                            "$ref":  "#/components/schemas/inventory_InventoryResponse"
+                                                                                                                                        }
+                                                                                                                          }
+                                                                                                           }
+                                                                                               }
+                                                                               }
+                                                                   },
+                                                     "x-internal":  true,
+                                                     "security":  [
+
+                                                                  ]
+                                                 }
+                                     }
+              },
+    "components":  {
+                       "schemas":  {
+                                       "product_ProductRequest":  {
+                                                                      "type":  "object",
+                                                                      "properties":  {
+                                                                                         "name":  {
+                                                                                                      "type":  "string",
+                                                                                                      "example":  "Wireless Keyboard",
+                                                                                                      "minLength":  1
+                                                                                                  },
+                                                                                         "description":  {
+                                                                                                             "type":  "string",
+                                                                                                             "example":  "Compact USB-C rechargeable keyboard",
+                                                                                                             "minLength":  1
+                                                                                                         },
+                                                                                         "price":  {
+                                                                                                       "type":  "number",
+                                                                                                       "example":  49.99
+                                                                                                   }
+                                                                                     },
+                                                                      "required":  [
+                                                                                       "description",
+                                                                                       "name",
+                                                                                       "price"
+                                                                                   ]
+                                                                  },
+                                       "product_ProductResponse":  {
+                                                                       "type":  "object",
+                                                                       "properties":  {
+                                                                                          "id":  {
+                                                                                                     "type":  "string",
+                                                                                                     "example":  "507f1f77bcf86cd799439011"
+                                                                                                 },
+                                                                                          "name":  {
+                                                                                                       "type":  "string",
+                                                                                                       "example":  "Wireless Keyboard"
+                                                                                                   },
+                                                                                          "description":  {
+                                                                                                              "type":  "string",
+                                                                                                              "example":  "Compact USB-C rechargeable keyboard"
+                                                                                                          },
+                                                                                          "price":  {
+                                                                                                        "type":  "number",
+                                                                                                        "example":  49.99
+                                                                                                    }
+                                                                                      }
+                                                                   },
+                                       "order_OrderLineItemDto":  {
+                                                                      "type":  "object",
+                                                                      "properties":  {
+                                                                                         "skuCode":  {
+                                                                                                         "type":  "string",
+                                                                                                         "description":  "Example only; replace with an existing inventory SKU.",
+                                                                                                         "example":  "iphone_15",
+                                                                                                         "minLength":  1
+                                                                                                     },
+                                                                                         "price":  {
+                                                                                                       "type":  "number",
+                                                                                                       "description":  "Client-supplied in this demo; not verified against the catalog.",
+                                                                                                       "example":  999.99
+                                                                                                   },
+                                                                                         "quantity":  {
+                                                                                                          "type":  "integer",
+                                                                                                          "format":  "int32",
+                                                                                                          "description":  "Positive quantity; the current implementation does not reserve stock.",
+                                                                                                          "example":  1
+                                                                                                      }
+                                                                                     },
+                                                                      "required":  [
+                                                                                       "price",
+                                                                                       "quantity",
+                                                                                       "skuCode"
+                                                                                   ]
+                                                                  },
+                                       "order_OrderRequest":  {
+                                                                  "type":  "object",
+                                                                  "properties":  {
+                                                                                     "orderLineItemsDtoList":  {
+                                                                                                                   "type":  "array",
+                                                                                                                   "description":  "At least one item. The field name is orderLineItemsDtoList.",
+                                                                                                                   "items":  {
+                                                                                                                                 "$ref":  "#/components/schemas/order_OrderLineItemDto"
+                                                                                                                             },
+                                                                                                                   "minItems":  1
+                                                                                                               }
+                                                                                 },
+                                                                  "required":  [
+                                                                                   "orderLineItemsDtoList"
+                                                                               ]
+                                                              },
+                                       "inventory_InventoryResponse":  {
+                                                                           "type":  "object",
+                                                                           "properties":  {
+                                                                                              "skuCode":  {
+                                                                                                              "type":  "string"
+                                                                                                          },
+                                                                                              "inStock":  {
+                                                                                                              "type":  "boolean"
+                                                                                                          }
+                                                                                          }
+                                                                       }
+                                   },
+                       "securitySchemes":  {
+                                               "bearerAuth":  {
+                                                                  "type":  "http",
+                                                                  "description":  "JWT authorization required by protected gateway operations. This hosted reference does not accept credentials or execute requests.",
+                                                                  "scheme":  "bearer",
+                                                                  "bearerFormat":  "JWT"
+                                                              }
+                                           }
+                   },
+    "tags":  [
+                 {
+                     "name":  "Products",
+                     "description":  "Product catalog backed by MongoDB. Reads are public through the gateway; creating a product requires the ADMIN realm role. Authorization is enforced at the gateway, not on the direct service port."
+                 },
+                 {
+                     "name":  "Orders",
+                     "description":  "Order placement backed by SQL Server with inventory lookup and Kafka publication to notificationTopic. Requires USER or ADMIN through the gateway. Demo limitations: prices come from the request, stock is not reserved, and a fallback can return HTTP 201 with a failure message. Not a production checkout."
+                 },
+                 {
+                     "name":  "Inventory (Internal)",
+                     "description":  "Internal SKU stock lookup backed by SQL Server. Reference only in the combined gateway documentation; no gateway business route is exposed."
+                 }
+             ]
+}

@@ -13,6 +13,7 @@ protected operations accept a Keycloak token through **Authorize**. Inventory
 is reference only and cannot be executed through the gateway documentation.
 
 - [API demo walkthrough and request examples](docs/api-demo.md)
+- [Publish the API reference on GitHub Pages for free](docs/github-pages.md)
 - [Hosting recommendation and public-demo checklist](docs/hosting.md)
 - [Build/startup details](docs/phase-1.md)
 

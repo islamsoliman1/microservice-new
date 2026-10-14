@@ -1,0 +1,31 @@
+body {
+  margin: 0;
+  background: #fafafa;
+  color: #25303b;
+  font-family: Arial, sans-serif;
+  letter-spacing: 0;
+}
+.reference-header {
+  padding: 24px 20px;
+  border-bottom: 1px solid #d6dce1;
+  background: #fff;
+}
+.reference-header strong {
+  display: block;
+  font-size: 24px;
+  overflow-wrap: anywhere;
+}
+.reference-header p {
+  line-height: 1.5;
+}
+.reference-header nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px 24px;
+}
+.reference-header a {
+  color: #17684d;
+}
+.swagger-ui .info .title {
+  overflow-wrap: anywhere;
+}
