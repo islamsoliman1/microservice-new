@@ -3,8 +3,7 @@ FROM maven:3.9-eclipse-temurin-26 AS build
 ARG MODULE
 WORKDIR /app
 COPY . .
-RUN --mount=type=cache,target=/root/.m2 \
-    mvn -q -pl ${MODULE} -am clean package -DskipTests \
+RUN mvn -q -pl ${MODULE} -am clean package -DskipTests \
     && cp ${MODULE}/target/*-exec.jar /app/app.jar
 
 FROM eclipse-temurin:26-jre
